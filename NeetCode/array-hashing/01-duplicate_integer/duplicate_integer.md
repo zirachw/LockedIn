@@ -2,6 +2,13 @@
 
 > [Array], [Hash Table], [Sorting]
 
+Run:
+
+```
+g++ duplicate_integer.cpp -o duplicate_integer
+./duplicate_integer
+```
+
 ## 1. Brute Force
 
 Naive
