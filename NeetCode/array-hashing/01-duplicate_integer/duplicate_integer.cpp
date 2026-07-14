@@ -1,24 +1,24 @@
 using namespace std;
 
 #include<vector>
-#include<unordered_map>
+#include<unordered_set>
 #include<iostream>
 
 class Solution {
 public:
     bool hasDuplicate(vector<int>& nums) {
 
-        unordered_map<int,int> umap;
+        unordered_set<int> seen;
 
-        for(int i = 0; i < nums.size(); i++) {
-            cout << nums[i] << endl;
-            if (umap.find(nums[i]) == umap.end()) {
-                umap[nums[i]] = 1;
-            }
-            else {
+        for (int num : nums) {
+
+            if (seen.count(num)) {
                 return true;
             }
+
+            seen.insert(num);
         }
+
         return false;
     }
 };
