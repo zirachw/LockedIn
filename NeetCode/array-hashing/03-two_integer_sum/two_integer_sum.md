@@ -2,6 +2,13 @@
 
 > [Array], [Hash Table]
 
+Run:
+
+```
+javac two_integer_sum.java
+java two_integer_sum
+```
+
 # 1. My Approach (Hash Map)
 
 Optimal solution
