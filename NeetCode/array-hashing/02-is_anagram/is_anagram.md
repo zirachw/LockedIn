@@ -2,6 +2,12 @@
 
 > [Hash Table], [String], [Sorting]
 
+Run:
+
+```
+go run is_anagram.go
+```
+
 # 1. My Approach (Hash Map)
 
 Optimal solution
