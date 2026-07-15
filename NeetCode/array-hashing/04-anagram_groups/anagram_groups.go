@@ -2,23 +2,31 @@ package main
 
 import (
 	"fmt"
-	"slices"
 )
 
 func groupAnagrams(strs []string) [][]string {
-	res := make(map[string][]string)
 
-	for _, s := range strs {
-		b := []byte(s)
-		slices.Sort(b)
-		res[string(b)] = append(res[string(b)], s)
-	}
+    table := make(map[[26]int][]string)
 
-	var result [][]string
-	for _, group := range res {
-		result = append(result, group)
+    for _, str := range strs {
+
+        var freq [26]int
+
+        for _, char := range str {
+
+            freq[char - 'a']++
+        }
+
+		table[freq] = append(table[freq], str)
+    }
+
+	var res [][]string
+
+    for _, group := range table {
+		res = append(res, group)
 	}
-	return result
+        
+	return res
 }
 
 

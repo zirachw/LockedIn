@@ -54,7 +54,7 @@ func groupAnagrams(strs []string) [][]string {
 
 ## 2. Sorting
 
-Naive, If sorted same then same.
+Naive, If sorted same then same
 
 Algorithm:
 1. Hash map, sorted version of a string as key, list of strings as value
