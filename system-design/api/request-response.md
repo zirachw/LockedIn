@@ -132,6 +132,8 @@ That second cost, extra round trips for related data, is what eventually pushes 
 
 # GraphQL
 
+![GraphQL](https://logique.s3.ap-southeast-1.amazonaws.com/2025/08/KHxOEdrP-graphql.jpg)
+
 GraphQL exposes a single endpoint and lets the client describe the exact shape of the response it wants in the query itself, rather than accepting whatever shape a fixed endpoint returns.
 
 A mobile client can ask for just a user's name and avatar, while a web dashboard asks for the same user plus their full order history, both from the same schema.
@@ -179,6 +181,8 @@ It does not automatically fix how many times the server itself queries its data 
 Solving that server-side cost takes a batching layer such as DataLoader inside the resolver, merging those per-order lookups into a single batched query. Without it, GraphQL only relocates the N+1 problem, it does not remove it.
 
 # gRPC
+
+![gRPC](https://raw.githubusercontent.com/cncf/artwork/main/projects/grpc/icon/color/grpc-icon-color.svg)
 
 gRPC, short for gRPC Remote Procedure Calls, originated at Google and defines a service contract upfront using Protocol Buffers, a schema that specifies exact request and response types. Client and server code is generated from that same schema in whatever language each side is written in.
 
@@ -231,6 +235,8 @@ That tradeoff, a fixed but fast contract, is why gRPC dominates service-to-servi
 The same properties make it a poor fit for a public API a browser needs to call directly, since browsers cannot easily speak raw gRPC and a binary payload cannot be inspected with curl.
 
 # tRPC
+
+![tRPC](https://trpc.io/img/logo-text-white.svg)
 
 tRPC, read as TypeScript Remote Procedure Call, skips a schema language entirely and instead shares TypeScript types directly between client and server. Calling a backend function looks and type-checks exactly like calling a local one.
 
