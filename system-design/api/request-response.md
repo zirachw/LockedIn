@@ -238,7 +238,7 @@ There is no REST endpoint to design, no GraphQL schema to maintain, and no code 
 
 ```mermaid
 flowchart LR
-    C[TypeScript client] --> E[Shared type-safe function call]
+    C[TypeScript client] --> E[Shared type-safe<br/>function call]
     E --> D[TypeScript server]
 ```
 
