@@ -132,9 +132,9 @@ That second cost, extra round trips for related data, is what eventually pushes 
 
 # GraphQL
 
-![GraphQL](https://logique.s3.ap-southeast-1.amazonaws.com/2025/08/KHxOEdrP-graphql.jpg)
-
 GraphQL exposes a single endpoint and lets the client describe the exact shape of the response it wants in the query itself, rather than accepting whatever shape a fixed endpoint returns.
+
+<p align="center"><img src="https://logique.s3.ap-southeast-1.amazonaws.com/2025/08/KHxOEdrP-graphql.jpg" width="50%" alt="GraphQL"></p>
 
 A mobile client can ask for just a user's name and avatar, while a web dashboard asks for the same user plus their full order history, both from the same schema.
 
@@ -182,9 +182,9 @@ Solving that server-side cost takes a batching layer such as DataLoader inside t
 
 # gRPC
 
-![gRPC](https://raw.githubusercontent.com/cncf/artwork/main/projects/grpc/icon/color/grpc-icon-color.svg)
-
 gRPC, short for gRPC Remote Procedure Calls, originated at Google and defines a service contract upfront using Protocol Buffers, a schema that specifies exact request and response types. Client and server code is generated from that same schema in whatever language each side is written in.
+
+<p align="center"><img src="https://raw.githubusercontent.com/cncf/artwork/main/projects/grpc/icon/color/grpc-icon-color.svg" width="50%" alt="gRPC"></p>
 
 Calls travel over HTTP/2 as compact binary payloads instead of readable JSON, and HTTP/2 lets many calls share a single connection instead of opening a new one each time.
 
@@ -236,9 +236,9 @@ The same properties make it a poor fit for a public API a browser needs to call 
 
 # tRPC
 
-![tRPC](https://trpc.io/img/logo-text-white.svg)
-
 tRPC, read as TypeScript Remote Procedure Call, skips a schema language entirely and instead shares TypeScript types directly between client and server. Calling a backend function looks and type-checks exactly like calling a local one.
+
+<p align="center"><img src="https://trpc.io/img/logo-text-white.svg" width="50%" alt="tRPC"></p>
 
 There is no REST endpoint to design, no GraphQL schema to maintain, and no code generation step the way gRPC needs.
 
