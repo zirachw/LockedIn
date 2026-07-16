@@ -37,6 +37,8 @@ flowchart LR
     B --> S[ShippingService]
 ```
 
+In messaging terms, `OrderService` is the producer, the side that publishes a message, and `NotificationService`, `AnalyticsService`, and `ShippingService` are consumers, the side that receives and acts on it. Every messaging system is built from just these two roles talking through a broker in between.
+
 # Why this matters
 
 The core payoff is decoupling. Services no longer need to know about each other, only about the message format, so a new consumer such as fraud detection can be added without touching `OrderService` at all.
@@ -51,21 +53,20 @@ And it allows independent scaling, since `NotificationService` consumers can sca
 
 - Queue (point-to-point) sends one message to one consumer, suited to a task that must happen exactly once, such as resizing an uploaded image.
 
+```mermaid
+flowchart LR
+    P[Producer] --> Q[[Queue]]
+    Q --> C[Consumer]
+```
+
 - Pub-sub (fan-out) sends one message to many consumers, suited to an event several parties need to know about, such as an order being placed.
 
 ```mermaid
 flowchart LR
-    subgraph Queue point-to-point
-        P1[Producer] --> Q[[Queue]]
-        Q --> C1[Consumer]
-    end
-
-    subgraph Pub-sub fan-out
-        P2[Producer] --> T((Topic))
-        T --> CA[Consumer A]
-        T --> CB[Consumer B]
-        T --> CC[Consumer C]
-    end
+    P[Producer] --> T((Topic))
+    T --> CA[Consumer A]
+    T --> CB[Consumer B]
+    T --> CC[Consumer C]
 ```
 
 # What gets traded away
