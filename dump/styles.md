@@ -1,18 +1,10 @@
-# What is Request-Response?
+# What is an API Style?
 
-A client asks a server for something, and the server answers once, in the same exchange. That single ask-and-answer shape is the oldest and still most common way two systems talk to each other, unlike a persistent connection or an inbound callback, which answer a different question entirely.
-
-```mermaid
-flowchart LR
-    C[Client] -- Request --> S[Server]
-    S -- Response --> C
-```
-
-As a backend starts serving more than one kind of client, web, mobile, third-party developers, or other internal services, it needs a consistent contract for exposing data and behavior across that boundary. Different styles have grown up around that same request-response shape, each trading off flexibility, performance, and simplicity in a different way.
+As a backend starts serving more than one kind of client, web, mobile, third-party developers, or other internal services, it needs a consistent contract for exposing data and behavior across that boundary. Different API styles have grown up around this need, each trading off flexibility, performance, and simplicity in a different way.
 
 # The shared problem
 
-Every style in this file exists to solve the same underlying need, letting a client ask a server for data or trigger an action, in a way both sides agree on ahead of time.
+Every API style exists to solve the same underlying need, letting a client ask a server for data or trigger an action, in a way both sides agree on ahead of time.
 
 That agreement covers the shape of a request, the shape of a response, and the rules for what counts as success or failure.
 
@@ -26,7 +18,7 @@ Every request and response is a full XML envelope, validated against that formal
 
 ```mermaid
 flowchart LR
-    C[Client] --> E[[XML envelope,<br/>WSDL contract]]
+    C[Client] --> E[[XML envelope, WSDL contract]]
     E --> D[Strictly validated response]
 ```
 
@@ -83,7 +75,7 @@ QUERY closes that gap, a method that behaves like GET for safety and caching, bu
 ```mermaid
 flowchart LR
     C[Web client] --> E[/GET /orders?userId=42/]
-    E --> D[Full order object,<br/>every field]
+    E --> D[Orders returned, product names still missing]
 ```
 
 REST's conventions exist to make a URL guessable without documentation:
@@ -101,14 +93,8 @@ GET /orders?userId=42 HTTP/1.1
 
 ```
 [
-  {
-    "id": 101,
-    "productId": 501,
-    "total": 49.99,
-    "items": [{ "sku": "A1", "qty": 2 }],
-    "shippingAddress": "221B Baker Street",
-    "createdAt": "2024-01-04T10:15:00Z"
-  }
+  { "id": 101, "productId": 501, "total": 49.99 },
+  { "id": 102, "productId": 502, "total": 12.50 }
 ]
 ```
 
@@ -187,7 +173,7 @@ Calls travel over HTTP/2 as compact binary payloads instead of readable JSON, an
 ```mermaid
 flowchart LR
     C[Internal service] --> E((Protobuf call))
-    E --> D[Typed response,<br/>low latency]
+    E --> D[Typed response, low latency]
 ```
 
 gRPC's conventions protect the wire format from breaking silently:
