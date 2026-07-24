@@ -19,7 +19,7 @@ Traffic grows unevenly, quiet most of the month, then far higher during a sale o
 
 ```mermaid
 flowchart LR
-    U1[Normal traffic] --> S[Physical server, sized for peak]
+    U1[Normal traffic] --> S[Physical server,<br/>sized for peak]
     S -.mostly idle.-> S
 ```
 
