@@ -2,8 +2,8 @@ using namespace std;
 
 #include <vector>
 
-int uniqueXorTriplets(vector<int>& nums) {
-
+int uniqueXorTriplets(vector<int>& nums)
+{
     const int max_xor = 2048;
 
     vector<bool> pair_xor(max_xor, false);
