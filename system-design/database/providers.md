@@ -298,7 +298,7 @@ CockroachDB answers a different question than the rest of this file, can a datab
 
 ```mermaid
 flowchart LR
-    W[Write] --> R[Raft consensus across replicas]
+    W[Write] --> R[Raft consensus<br/>across replicas]
     R --> C[Committed once quorum agrees]
 ```
 
