@@ -8,7 +8,42 @@ Run:
 go run group_anagrams.go
 ```
 
-# 1. My Approach (Hash Table)
+## 1. Sorting
+
+Naive, If sorted same then same
+
+Algorithm:
+1. Hash map, sorted version of a string as key, list of strings as value
+2. For each string
+    - Sort to form the key
+    - Append to the same key
+3. Reformat into the answer
+
+Time complexity: $O(m * n \ \log \ n)$
+
+Space complexity: $O(m * n)$
+
+```go
+import "slices"
+
+func groupAnagrams(strs []string) [][]string {
+	res := make(map[string][]string)
+
+	for _, str := range strs {
+		runeStr := []rune(str)
+		slices.Sort(runeStr)
+		res[string(runeStr)] = append(res[string(runeStr)], s)
+	}
+
+	var result [][]string
+	for _, group := range res {
+		result = append(result, group)
+	}
+	return result
+}
+```
+
+## 2. Used Approach (Hash Table)
 
 Optimal solution
 
@@ -49,40 +84,5 @@ func groupAnagrams(strs []string) [][]string {
 	}
         
 	return res
-}
-```
-
-## 2. Sorting
-
-Naive, If sorted same then same
-
-Algorithm:
-1. Hash map, sorted version of a string as key, list of strings as value
-2. For each string
-    - Sort to form the key
-    - Append to the same key
-3. Reformat into the answer
-
-Time complexity: $O(m * n \ \log \ n)$
-
-Space complexity: $O(m * n)$
-
-```go
-import "slices"
-
-func groupAnagrams(strs []string) [][]string {
-	res := make(map[string][]string)
-
-	for _, str := range strs {
-		runeStr := []rune(str)
-		slices.Sort(runeStr)
-		res[string(runeStr)] = append(res[string(runeStr)], s)
-	}
-
-	var result [][]string
-	for _, group := range res {
-		result = append(result, group)
-	}
-	return result
 }
 ```
