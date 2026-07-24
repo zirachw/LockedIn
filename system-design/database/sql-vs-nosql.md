@@ -28,7 +28,7 @@ NoSQL is really an umbrella term for anything that is not the relational model. 
 ```mermaid
 flowchart LR
     D[Document store] --> N1[Flexible JSON-like documents]
-    W[Wide-column store] --> N2[Denormalized, partition-key access]
+    W[Wide-column store] --> N2[Denormalized,<br/>partition-key access]
     K[Key-value store] --> N3[Simple key to value lookup]
 ```
 
