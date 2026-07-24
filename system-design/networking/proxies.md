@@ -32,98 +32,22 @@ A reverse proxy usually does more than just relay traffic. TLS termination means
 
 # Tech Stacks
 
-Different real tools answer the forward and reverse cases above. Squid and mitmproxy cover the forward side, Nginx, HAProxy, Envoy, Traefik, and Caddy cover the reverse side, each built around a different priority.
+Squid and mitmproxy answer the forward case, Nginx, HAProxy, Envoy, Traefik, and Caddy answer the reverse case, and the first real decision, forward or reverse, already narrows the field before any tool-specific tradeoff comes into play.
 
-## Squid
+| Tool | Side | Defining trait | Fits | Trades away |
+|---|---|---|---|---|
+| Squid | Forward | Caches outbound traffic and enforces content filtering rules at scale | An office network controlling what thousands of employees can reach | Per-request visibility, it is built to police traffic for many users, not to show a human what one request contains |
+| mitmproxy | Forward | Decrypts and displays traffic in real time for inspection | Debugging a single application's outbound calls | Squid's scale, it is not meant to sit in front of thousands of users |
+| Nginx | Reverse | Started as a web server that grew reverse-proxy and load-balancing features on top | A team that wants one tool to serve static content and reverse proxy dynamic requests | Envoy's dynamic configuration and HAProxy's narrower throughput focus, for being a comfortable, mature default |
+| HAProxy | Reverse | Strips the web-server layer away and focuses purely on proxying and load balancing | Deployments where raw throughput and load-balancing algorithm flexibility matter more than serving content directly | Nginx's convenience of also serving static content |
+| Envoy | Reverse | Configured dynamically through an API, exposing retries, timeouts, and circuit breaking as config rather than code | A service mesh like Istio, where routing rules need to change constantly as services scale up and down | Simplicity, its dynamic configuration model and feature surface are more to learn than a static config file |
+| Traefik | Reverse | Auto-discovers services by watching Docker or Kubernetes directly | A containerized environment where routing rules should update automatically as services deploy | Fine-grained manual control, a setup leaning entirely on auto-discovery can misbehave if discovery does |
+| Caddy | Reverse | Automatic HTTPS, provisioning and renewing TLS certificates with zero configuration | A small project that wants a secure reverse proxy running quickly, without managing certificates by hand | Fine-grained configuration control that HAProxy or Envoy offer |
 
-Squid is the classic open-source forward proxy, built for caching outbound traffic and enforcing content filtering rules at scale, the natural fit for an office network controlling what thousands of employees can reach.
-
-## mitmproxy
-
-mitmproxy trades Squid's scale focus for inspection. It is built to decrypt and display traffic in real time, which makes it the tool of choice for debugging a single application's outbound calls rather than policing an entire network.
-
-## Nginx
-
-Nginx started as a web server that grew reverse-proxy and load-balancing features on top, which is why it is still often the default, mature, fast, and just as comfortable serving static files as it is proxying to a backend pool.
-
-## HAProxy
-
-HAProxy strips that web-server layer away entirely and focuses purely on proxying and load balancing, which is what makes it the choice when raw throughput and fine-grained load-balancing algorithms matter more than serving content directly.
-
-## Envoy
-
-Envoy is built around dynamic configuration through an API rather than a static config file, and exposes fine-grained traffic control, retries, timeouts, circuit breaking, as configuration rather than code. That is why it became the standard proxy inside service meshes like Istio, where configuration needs to change constantly as services scale up and down.
-
-## Traefik
-
-Traefik leans into auto-discovery, watching Docker or Kubernetes directly and updating its routing rules as containers come and go, without a human manually editing a config file for every new service.
-
-## Caddy
-
-Caddy's defining feature is automatic HTTPS, provisioning and renewing TLS certificates with zero configuration, which makes it the fastest path to a secure reverse proxy for a small project that does not want to manage certificates by hand.
-
-# How to choose
-
-The first decision is always forward versus reverse, whose identity actually needs representing. Protecting or controlling a group of clients calls for a forward proxy, fronting a group of servers calls for a reverse proxy. Within each side, the real choice comes down to which tool's priorities match the job.
-
-## Squid
-
-Squid fits a network egress point where caching and content filtering for many users matters more than inspecting any single request in detail.
-
-## mitmproxy
-
-mitmproxy fits debugging or testing a single application's outbound traffic, not managing traffic for an entire network.
-
-## Nginx
-
-Nginx fits a team that wants one tool to serve static content and reverse proxy dynamic requests, without needing Envoy's dynamic configuration or HAProxy's narrower throughput focus.
-
-## HAProxy
-
-HAProxy fits a deployment where load-balancing performance and algorithm flexibility matter more than also serving content directly.
-
-## Envoy
-
-Envoy fits a service mesh or a system where routing rules, retries, and circuit breaking need to change dynamically through an API rather than a static config file.
-
-## Traefik
-
-Traefik fits a containerized environment, Docker or Kubernetes, where routing rules should update automatically as services are deployed, without manual config edits.
-
-## Caddy
-
-Caddy fits a small project that wants a secure reverse proxy running quickly, without managing TLS certificates by hand.
+Envoy deserves a second look beyond the table. Its API-driven configuration is what let it become the default proxy inside service meshes specifically, a static Nginx or HAProxy config file is not built to change on every deploy, but a mesh with services scaling constantly needs exactly that.
 
 # What gets traded away
 
 A forward proxy protects and represents the client's identity, adding a layer every client request has to pass through. That also makes it a single point of failure for every client behind it.
 
 A reverse proxy protects and represents the server's identity, centralizing TLS and routing conveniently. It becomes a single point of failure for every backend server behind it unless the proxy layer itself is made redundant.
-
-## Squid
-
-Squid trades away per-request visibility for scale. It is built to police traffic for many users at once, not to show a human what a single request actually contains.
-
-## mitmproxy
-
-mitmproxy trades away that same scale, it is not meant to sit in front of thousands of users, only to inspect traffic for whoever is debugging it.
-
-## Nginx
-
-Nginx trades away Envoy's dynamic, API-driven configuration and HAProxy's narrower, higher-throughput focus for being a comfortable, mature default that does a bit of everything.
-
-## HAProxy
-
-HAProxy trades away the web-serving convenience Nginx offers. It expects something else to serve static content if that is needed at all.
-
-## Envoy
-
-Envoy trades away simplicity, its dynamic configuration model and feature surface are more to learn than a static Nginx or HAProxy config file.
-
-## Traefik
-
-Traefik trades away fine-grained manual control for automation. A setup that depends entirely on auto-discovery can behave unpredictably if that discovery mechanism misbehaves.
-
-## Caddy
-
-Caddy trades away some of the fine-grained configuration control HAProxy or Envoy offer, in exchange for near-zero setup effort.
