@@ -9,51 +9,7 @@ g++ top_k_frequent_elements.cpp -o top_k_frequent_elements
 ./top_k_frequent_elements
 ```
 
-## 1. My Approach (Freq & Group)
-
-Optimal solution
-
-Algorithm:
-1. Freq map
-2. Group of same freq ordered 0 to max length
-3. Loop from largest freq until k element stored
-
-Time complexity: $O(n)$
-
-Space complexity: $O(n)$
-
-```cpp
-class Solution
-{
-    public:
-        vector<int> topKFrequent(vector<int>& nums, int k)
-        {
-            unordered_map<int, int> freq;
-
-            for (int num : nums) freq[num]++;
-
-            vector<vector<int>> groups(nums.size() + 1);
-
-            for (auto& [key, value] : freq) groups[value].push_back(key);
-
-            vector<int> res;
-
-            for (int i = groups.size() - 1; i > 0; i--)
-            {
-                for (int num : groups[i])
-                {
-                    res.push_back(num);
-
-                    if (res.size() == k) return res;
-                }
-            }
-
-            return res;
-        }
-};
-```
-
-## 2. Sorting
+## 1. Sorting
 
 Naive
 
@@ -124,6 +80,50 @@ class Solution
                 res.push_back(heap.top().second);
                 heap.pop();
             }
+            return res;
+        }
+};
+```
+
+## 2. Used Approach (Freq & Group)
+
+Optimal solution
+
+Algorithm:
+1. Freq map
+2. Group of same freq ordered 0 to max length
+3. Loop from largest freq until k element stored
+
+Time complexity: $O(n)$
+
+Space complexity: $O(n)$
+
+```cpp
+class Solution
+{
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k)
+        {
+            unordered_map<int, int> freq;
+
+            for (int num : nums) freq[num]++;
+
+            vector<vector<int>> groups(nums.size() + 1);
+
+            for (auto& [key, value] : freq) groups[value].push_back(key);
+
+            vector<int> res;
+
+            for (int i = groups.size() - 1; i > 0; i--)
+            {
+                for (int num : groups[i])
+                {
+                    res.push_back(num);
+
+                    if (res.size() == k) return res;
+                }
+            }
+
             return res;
         }
 };
