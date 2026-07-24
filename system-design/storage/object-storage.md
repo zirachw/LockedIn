@@ -36,8 +36,8 @@ A bucket is the top-level container objects live in, roughly analogous to a driv
 
 ```mermaid
 flowchart LR
-    B[(Bucket)] --> O1["Object, key: images/user42/avatar.png"]
-    B --> O2["Object, key: images/user42/banner.png"]
+    B[(Bucket)] --> O1["Object,<br/>key: images/user42/avatar.png"]
+    B --> O2["Object,<br/>key: images/user42/banner.png"]
 ```
 
 Retrieving an object only ever needs the bucket and its key, there is no need to know which physical machine actually holds the data.
