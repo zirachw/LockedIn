@@ -18,13 +18,13 @@ flowchart LR
     L --> O[Output]
 ```
 
-Zero-shot's conventions are built around the instruction carrying the full weight of the task:
+The instruction carries the full weight of the task here.
 
 - The instruction itself specifies the task, its format, and any constraints, since there is no example to fall back on if the wording is ambiguous.
 - Zero-shot works best on tasks close to what the model saw often during pretraining, general knowledge questions, common formatting requests, rather than a narrow or unusual task.
 - A system prompt is often used to set persistent instructions once, so every individual user message does not need to repeat the same framing.
 
-A zero-shot prompt looks like this.
+A sentiment-classification prompt needs nothing more than the instruction itself.
 
 ```python
 prompt = "Classify the sentiment of this review as positive, negative, or neutral.\n\nReview: The battery life is disappointing."
@@ -46,13 +46,13 @@ flowchart LR
     L --> O[Output]
 ```
 
-Few-shot's conventions are built around choosing and ordering examples deliberately:
+Choosing and ordering examples deliberately is what its conventions come down to.
 
 - Examples are chosen to be representative of the range of inputs the real query might look like, not just the easiest case.
 - The order of examples can measurably affect output quality, later examples tend to carry more influence, so the most representative example is often placed last.
 - Few-shot examples consume real context window and cost real tokens on every call, unlike a fine-tuned model, which pays that cost once during training instead of on every request.
 
-A few-shot prompt looks like this.
+The same sentiment task gets two worked examples ahead of the real one.
 
 ```python
 prompt = """Classify the sentiment as positive, negative, or neutral.
@@ -80,13 +80,13 @@ flowchart LR
     R --> A[Final answer]
 ```
 
-Chain-of-thought's conventions are built around eliciting the reasoning explicitly:
+Eliciting the reasoning explicitly is the whole point here.
 
 - The simplest version is a single added phrase, "think step by step", appended to the prompt, which alone measurably improves accuracy on reasoning-heavy tasks.
 - Few-shot chain-of-thought combines both techniques, the worked examples show the reasoning steps, not just the final answer, teaching the model the expected reasoning pattern as well as the task.
 - The reasoning text is often stripped out of what gets shown to the end user, since it exists to improve the model's own accuracy, not necessarily to be read.
 
-A chain-of-thought prompt looks like this.
+Sentiment classification does not need this, arithmetic does.
 
 ```python
 prompt = """A store had 23 apples, sold 15, then received a shipment of 8 more.
@@ -107,13 +107,13 @@ flowchart LR
     Obs --> Th
 ```
 
-ReAct's conventions are built around a fixed three-part cycle:
+A fixed three-part cycle is what its conventions are built around.
 
 - Each cycle follows the same structure, a thought explaining what is needed next, an action that fetches it, and an observation recording what came back.
 - The reasoning trace is what lets a model recover from a bad tool result, since the next thought explicitly reacts to what the observation actually contained.
 - This pattern is the prompting-level foundation underneath most agent frameworks. LangGraph and AutoGen both implement a version of this same thought, action, observation loop under the hood.
 
-A ReAct-style prompt looks like this.
+Neither sentiment classification nor arithmetic needs an external lookup, a weather question does.
 
 ```
 Thought: I need the current weather in Jakarta to answer this.
