@@ -4,6 +4,8 @@ Authentication confirms who is making a request. Authorization confirms what tha
 
 # Authentication
 
+Authentication is the half of the problem that comes first, and the classic one-line version of it is "who are you," proving a request actually comes from who it claims to come from, before anything downstream, including authorization, gets to matter at all.
+
 # Starting small
 
 Consider a single internal service calling another, authenticated with one hardcoded API key checked on every request.
@@ -85,6 +87,8 @@ GET /authorize?client_id=app123&scope=read_profile&redirect_uri=...
 That delegation is exactly what session and token auth don't solve on their own, a user granting one specific app limited access without ever handing that app a password it could reuse elsewhere. The cost is complexity, OAuth's authorization flows involve more moving parts, redirect steps, and scopes to configure correctly than either session or token auth alone.
 
 # Authorization
+
+Authorization is the half that comes after, and the classic one-line version of it is "what are you allowed to do," deciding what an already-confirmed identity is actually permitted to act on.
 
 # Starting small
 
