@@ -19,13 +19,13 @@ flowchart LR
     T --> O[Output]
 ```
 
-LangChain's conventions center on composing small, reusable pieces rather than writing one large function:
+Composing small, reusable pieces rather than writing one large function is the whole design.
 
 - Chains are composed with LCEL, LangChain Expression Language, using the pipe operator to connect a prompt, a model, and an output parser into one runnable.
 - Prompt templates are kept separate from application logic, so the same chain can be reused with a different prompt without touching the surrounding code.
 - Memory objects attach conversation history to a chain, so a multi-turn conversation does not need to be threaded through manually on every call.
 
-A simple LCEL chain looks like this.
+A one-sentence summarizer is about as small as an LCEL chain gets.
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -39,7 +39,7 @@ chain = prompt | model | StrOutputParser()
 result = chain.invoke({"text": "Long article text goes here."})
 ```
 
-LangChain's chains are inherently linear or tree-shaped. Once a workflow needs to loop, branch conditionally, or let an agent decide to revisit an earlier step, the abstraction starts to strain, which is exactly the gap LangGraph was built to close.
+That LCEL pipeline is inherently linear or tree-shaped. Once a workflow needs to loop, branch conditionally, or let an agent decide to revisit an earlier step, the abstraction starts to strain, which is exactly the gap LangGraph was built to close.
 
 # LangGraph
 
@@ -54,13 +54,13 @@ flowchart LR
     D -- done --> E[End]
 ```
 
-LangGraph's conventions revolve around explicit state rather than implicit chaining:
+Explicit state rather than implicit chaining is what its conventions revolve around.
 
 - A graph is built from a StateGraph, where the state is a typed object every node reads from and writes back to.
 - Conditional edges route execution based on the current state, which is how an agent decides to call a tool again versus finishing.
 - Checkpointing persists state between steps, which is what allows a human-in-the-loop pause or a resumed run after a crash.
 
-Defining a small looping agent graph looks like this.
+A small looping agent graph needs an agent node, a tool node, and a condition deciding between them.
 
 ```python
 from langgraph.graph import StateGraph, END
@@ -98,13 +98,13 @@ flowchart LR
     R2 --> O[Final output]
 ```
 
-CrewAI's conventions read closer to describing a team than describing a workflow:
+CrewAI reads closer to describing a team than describing a workflow.
 
 - Each Agent is defined with a role, goal, and backstory, which shapes how it responds even before a task is assigned.
 - Tasks are assigned to specific agents and chained into a Crew, which runs them in the configured process.
 - A hierarchical process adds a manager agent that delegates tasks, closer to how a human team lead assigns work.
 
-Defining a small two-agent crew looks like this.
+A two-agent crew needs each agent defined first, then a task assigned to each.
 
 ```python
 from crewai import Agent, Task, Crew
@@ -131,13 +131,13 @@ flowchart LR
     A <--> C[Critic agent]
 ```
 
-AutoGen's conventions are built around chat roles rather than graph nodes:
+Chat roles rather than graph nodes are what it is built around.
 
 - A UserProxyAgent can execute code or represent a human in the loop, while an AssistantAgent generates responses from the LLM.
 - Group chats let more than two agents participate, with a manager deciding which agent speaks next.
 - Termination conditions, a specific phrase or a message count, decide when the conversation ends, rather than a graph reaching an end node.
 
-A minimal two-agent conversation looks like this.
+Starting a two-agent conversation needs only the two agents and an opening message.
 
 ```python
 from autogen import AssistantAgent, UserProxyAgent
@@ -163,13 +163,13 @@ flowchart LR
     Ctx --> L[LLM]
 ```
 
-LlamaIndex's conventions are built around the retrieval pipeline first:
+The retrieval pipeline comes first here, before anything else.
 
 - Documents are loaded through a data connector, then split into nodes, the retrievable unit LlamaIndex indexes and ranks.
 - A VectorStoreIndex is the default index type, backed by a pluggable vector store, Pinecone, Chroma, pgvector, and others.
 - A query engine wraps retrieval and generation into a single call, so a RAG pipeline is usually just a few lines to stand up.
 
-A minimal RAG query looks like this.
+Loading a folder of documents and querying it takes only four lines end to end.
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -194,13 +194,13 @@ flowchart LR
     K --> Mdl[Model connector]
 ```
 
-Semantic Kernel's conventions carry over its enterprise, multi-language roots:
+Its enterprise, multi-language roots carry over directly into its conventions.
 
 - A plugin is a class whose methods are decorated as kernel functions, which the model can then call the same way it would call a tool in LangChain.
 - Planners let the kernel decide which plugin functions to call and in what order, similar in spirit to an agent loop, but scoped tightly to registered plugins.
 - The same kernel abstraction works across C#, Python, and Java, which matters for teams with an existing multi-language codebase rather than a Python-only one.
 
-Registering a plugin and invoking it looks like this.
+Registering a plugin is a matter of decorating a method and adding it to the kernel.
 
 ```python
 import semantic_kernel as sk
@@ -228,13 +228,13 @@ flowchart LR
     Tool --> DB[(Database node)]
 ```
 
-n8n's conventions follow from being visual and general-purpose first, LLM-specific second:
+Being visual and general-purpose first, LLM-specific second, is where its conventions start.
 
 - A workflow is a directed graph of nodes built on a visual canvas, exported and version-controlled as a JSON file rather than as source code.
 - Credentials for each integration, an LLM provider, a database, a SaaS API, are stored once and reused across any node that needs them.
 - A Code node exists as an escape hatch for logic that doesn't fit a pre-built node, running a small JavaScript or Python snippet inline within an otherwise visual workflow.
 
-The underlying JSON for a simple two-node workflow looks like this.
+The canvas above compiles down to plain JSON underneath.
 
 ```json
 {
