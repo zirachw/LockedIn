@@ -83,7 +83,7 @@ flowchart LR
     Req2[Request 2] --> B
     Req3[Request 3] --> B
     B --> G[GPU with PagedAttention]
-    G --> T[Streamed tokens per request]
+    G --> T[Streamed tokens<br/>per request]
 ```
 
 Maximizing GPU throughput under concurrent load is the design center.
