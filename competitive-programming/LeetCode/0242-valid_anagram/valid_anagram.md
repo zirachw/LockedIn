@@ -8,48 +8,7 @@ Run:
 go run valid_anagram.go
 ```
 
-# 1. My Approach (Hash Map)
-
-Optimal solution
-
-Algorithm:
-1. Check if len aren't the same, then `false`
-2. Simply, record the freq
-3. If same, then `true`
-
-Time complexity: $O(n + m)$
-
-Space complexity: $O(1)$, 26 char
-
-```go
-func isAnagram(s string, t string) bool {
-	
-	if len(s) != len(t) {
-		return false
-	}
-	
-	smap := make(map[rune]int)
-	tmap := make(map[rune]int)
-
-	for _, char := range s {
-		smap[char]++
-	} 
-
-	for _, char := range t {
-		tmap[char]++
-	}
-
-	for keyS, valS := range smap {
-		if tmap[keyS] != valS {
-            return false
-        }
-	}
-
-	return true
-}
-```
-
-## 2. Sorting
+## 1. Sorting
 
 Naive, If sorted same then same.
 
@@ -83,7 +42,7 @@ func isAnagram(s string, t string) bool {
 }
 ```
 
-## 3. Hash Table
+## 2. Hash Table
 
 Clever way, increment for $s$ and decrement for $t$.
 If all not 0, then not same.
@@ -121,5 +80,46 @@ func isAnagram(s string, t string) bool {
     }
 
     return true
+}
+```
+
+# 3. Used Approach (Hash Map)
+
+Optimal solution
+
+Algorithm:
+1. Check if len aren't the same, then `false`
+2. Simply, record the freq
+3. If same, then `true`
+
+Time complexity: $O(n + m)$
+
+Space complexity: $O(1)$, 26 char
+
+```go
+func isAnagram(s string, t string) bool {
+	
+	if len(s) != len(t) {
+		return false
+	}
+	
+	smap := make(map[rune]int)
+	tmap := make(map[rune]int)
+
+	for _, char := range s {
+		smap[char]++
+	} 
+
+	for _, char := range t {
+		tmap[char]++
+	}
+
+	for keyS, valS := range smap {
+		if tmap[keyS] != valS {
+            return false
+        }
+	}
+
+	return true
 }
 ```
