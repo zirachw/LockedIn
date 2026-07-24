@@ -8,6 +8,8 @@ Every quantization method exists to answer the same underlying need, representin
 
 Many methods have been built to answer that problem, but four are worth knowing well, GPTQ, AWQ, GGUF, and bitsandbytes, each trading calibration effort against deployment target in a different way.
 
+Following the same 7B checkpoint through each of these four pipelines is the clearest way to see where they actually differ, not in the bit-width they land on, most of them target 4-bit, but in what has to happen before that checkpoint can be used at all, and where it ends up running.
+
 # GPTQ
 
 GPTQ quantizes a model layer by layer after training is done, using a calibration dataset to solve for the quantized weights that minimize the error introduced in that layer's output, rather than just rounding each weight independently.
@@ -19,13 +21,13 @@ flowchart LR
     L --> Q[Quantized weights]
 ```
 
-GPTQ's conventions center on calibration-driven, layer-by-layer reconstruction:
+Calibration-driven, layer-by-layer reconstruction is the mechanism.
 
 - A small calibration dataset, a few hundred samples, is run through the model once to capture how each layer actually behaves, rather than quantizing purely from the weight values alone.
 - Quantization is solved one layer at a time, using the previous layer's already-quantized output as input, so later layers compensate for error introduced earlier.
 - GPTQ typically targets 4-bit or 3-bit weights for GPU inference, paired with a kernel that dequantizes on the fly during the forward pass.
 
-Quantizing a model with GPTQ looks like this.
+Turning the 7B checkpoint into a GPTQ model means running it through that calibration pass once, offline, before it is ever served.
 
 ```python
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
@@ -36,7 +38,7 @@ model.quantize(calibration_dataset)
 model.save_quantized("base-model-gptq-4bit")
 ```
 
-GPTQ's calibration-based approach preserves quality well at 4-bit, but the calibration pass itself takes real compute time and a representative dataset. Quantizing blind without calibration data would not reach the same accuracy.
+What comes out the other side is a separate, already-quantized checkpoint, ready to be loaded straight onto a GPU for serving. That calibration pass takes real compute time and a representative dataset, and quantizing blind without one would not reach the same accuracy.
 
 # AWQ
 
@@ -49,13 +51,13 @@ flowchart LR
     S --> Q[Quantize non-salient channels harder]
 ```
 
-AWQ's conventions are built around protecting salient channels rather than reconstructing layer by layer:
+Protecting salient channels, rather than reconstructing layer by layer, is what its conventions revolve around.
 
 - Salience is measured by activation magnitude, not weight magnitude, since a large activation flowing through a small weight can still dominate the output.
 - Rather than storing protected channels at a different bit-width, AWQ rescales the whole channel so the standard quantization grid preserves more precision on it automatically.
 - Because it does not solve a layer-by-layer reconstruction problem, AWQ quantizes faster than GPTQ for a comparable quality level.
 
-Quantizing a model with AWQ looks like this.
+The same 7B checkpoint goes through a comparable offline step here, just a lighter one.
 
 ```python
 from awq import AutoAWQForCausalLM
@@ -65,7 +67,7 @@ model.quantize(tokenizer, quant_config={"zero_point": True, "q_group_size": 128,
 model.save_quantized("base-model-awq-4bit")
 ```
 
-AWQ generally holds up as well as or better than GPTQ at the same bit-width with less calibration compute, but it is a newer format with less universal support across inference engines than GPTQ.
+The output is, again, a separate quantized checkpoint meant for GPU serving, generally holding up as well as or better than GPTQ's at the same bit-width for less calibration compute. It is a newer format, though, with less universal support across inference engines than GPTQ.
 
 # GGUF
 
@@ -78,19 +80,19 @@ flowchart LR
     S --> Q[Quantized block]
 ```
 
-GGUF's conventions are built around portability and block-wise scaling:
+Portability and block-wise scaling are the design center.
 
 - Naming like Q4_K_M encodes the bit-width, four bits, and the specific quantization variant, K-quant, medium, each variant trading a bit more size for a bit more accuracy.
 - Block-wise scaling keeps outlier weights within one block from distorting the whole tensor's precision, at the cost of storing a scale factor per block.
 - GGUF bundles the quantized weights with model metadata and tokenizer information into a single portable file, which is why llama.cpp and Ollama both load it directly.
 
-Converting a model to GGUF looks like this.
+The same checkpoint converts to a single portable file here, instead of a GPU-serving checkpoint.
 
 ```bash
 python convert_hf_to_gguf.py base-model/ --outfile model.gguf --outtype q4_k_m
 ```
 
-GGUF's block-wise scheme is built for portability and CPU-friendly inference more than squeezing out the last bit of GPU throughput, which is why GPTQ and AWQ remain more common for pure GPU-server deployments.
+That one `.gguf` file is what `inference-engines.md` covers llama.cpp and Ollama loading directly, built for portability and CPU-friendly inference rather than squeezing out the last bit of GPU throughput, which is why GPTQ and AWQ remain more common for pure GPU-server deployments.
 
 # bitsandbytes
 
@@ -102,13 +104,13 @@ flowchart LR
     L --> Q[Quantized in memory, 4-bit or 8-bit]
 ```
 
-bitsandbytes's conventions are built around dynamic, load-time quantization:
+Dynamic, load-time quantization is what its conventions are built around.
 
 - Quantization happens at load time, directly inside `from_pretrained`, rather than requiring a separately produced quantized checkpoint file.
 - NF4, normalized float 4-bit, is the default 4-bit type, chosen to match the roughly normal distribution pretrained weights tend to follow.
 - Because quantization is dynamic and library-integrated rather than a fixed file format, it is the natural fit for QLoRA, where the base model needs to be quantized specifically to make room for training the LoRA adapter on top of it.
 
-Loading a model with bitsandbytes looks like this.
+This is the one pipeline in this file with no separate offline step at all. The original 7B checkpoint is loaded directly, and quantization happens in the same call.
 
 ```python
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
@@ -117,7 +119,7 @@ bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bn
 model = AutoModelForCausalLM.from_pretrained("base-model", quantization_config=bnb_config)
 ```
 
-bitsandbytes trades away GPTQ and AWQ's calibration-tuned accuracy for convenience, loading any checkpoint in quantized form with no offline preparation step, which is exactly why QLoRA builds on it rather than a pre-quantized format.
+No new file is ever produced, the quantized weights exist only in memory for that process. That is exactly why QLoRA builds on bitsandbytes rather than a pre-quantized format, the whole point is quantizing the base model on the fly to make room for a training run, not producing a checkpoint to hand off elsewhere.
 
 # How to choose
 
