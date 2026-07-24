@@ -6,6 +6,8 @@
 
 Every object store answers the same underlying need, storing and serving objects durably at scale, addressed by a key rather than a filesystem path. Where they differ is who runs the infrastructure, and how tightly the store is bound to one cloud.
 
+One question exposes that difference more concretely than durability numbers do. Upload the same key twice in a row, overwriting it, and ask what the very next read returns. That is a consistency guarantee, and not every store has always given the same answer.
+
 # Amazon S3
 
 S3 is AWS's object storage service, and the one most other object stores measure themselves against, including MinIO, which speaks S3's own API.
@@ -17,23 +19,27 @@ flowchart LR
     S3 --> T2[Glacier, archival tier]
 ```
 
-S3's conventions center on tiering and deep AWS integration:
+Storage classes and event-driven integration are what set its conventions.
 
 - Storage classes, Standard, Infrequent Access, Glacier, let the same bucket hold both actively-served objects and rarely-accessed archives at very different costs, without moving the data to a different service.
 - Bucket policies and IAM together control access down to individual keys or prefixes, the same permission model the rest of AWS uses.
 - Event notifications can trigger a Lambda function directly on an object being created or deleted, wiring storage into the rest of an AWS-based pipeline with no separate polling needed.
 
-Uploading an object looks like this.
+For years, S3's answer to the overwrite question was not what most engineers assumed. New objects were read-after-write consistent from early on, but an overwrite of an existing key, or a delete, was only eventually consistent. A read immediately afterward could still return the old version or a 404.
+
+Real infrastructure grew up around that gap. EMRFS Consistent View and the open-source S3Guard both existed purely to paper over it for tools like Hadoop that assumed a listing reflected reality.
 
 ```python
 s3.put_object(Bucket="user-uploads", Key="images/user42/avatar.png", Body=image_bytes)
 ```
 
-S3's storage classes and native AWS event integration make it the natural default for a system already built on AWS, but that depth of integration is also what makes migrating away from it later more work than a plain key-value store would suggest.
+AWS closed that gap for good in December 2020. Every PUT, GET, and LIST is now strongly consistent by default, no configuration required, though plenty of production Hadoop or EMR pipelines written before then still carry a consistency workaround that is now dead weight.
+
+S3's depth of AWS integration makes it the natural default for a system already built there, but that same depth is what makes migrating away from it later more work than a plain key-value store would suggest.
 
 # Google Cloud Storage
 
-GCS is Google Cloud's equivalent, distinguished by a single, uniform API across storage classes rather than S3's more separated tier model.
+GCS is Google Cloud's equivalent, distinguished by a single, uniform API across storage classes rather than S3's more separated tier model. On the overwrite question it never had S3's history to work around, strong consistency for both reads and listings was there from early on.
 
 ```mermaid
 flowchart LR
@@ -41,13 +47,11 @@ flowchart LR
     GCS --> T1[Standard, Nearline, Coldline, Archive]
 ```
 
-GCS's conventions favor that uniformity:
+That uniformity carries through everything else about it.
 
 - All storage classes share the same API and namespace, moving an object between Standard and Archive is a metadata change rather than a different set of calls.
 - Object lifecycle rules automatically transition or delete objects based on age or access pattern, configured once at the bucket level.
-- Strong global consistency was available in GCS earlier than in some competitors, meaning a write is immediately visible to every subsequent read, not just eventually.
-
-Uploading an object looks like this.
+- Strong consistency covers every operation uniformly, rather than reads and overwrites following different rules.
 
 ```python
 bucket.blob("images/user42/avatar.png").upload_from_string(image_bytes)
@@ -57,7 +61,7 @@ GCS's uniform API is simpler to reason about across storage classes than S3's mo
 
 # Azure Blob Storage
 
-Azure Blob Storage is Microsoft's equivalent, organized around three blob types rather than a single generic object type, block blobs for most files, append blobs for data that only ever grows at the end, and page blobs for random-access data like virtual disks.
+Azure Blob Storage is Microsoft's equivalent, also strongly consistent on overwrite, and organized around three blob types rather than a single generic object type.
 
 ```mermaid
 flowchart LR
@@ -67,19 +71,19 @@ flowchart LR
     AB --> Page[Page blob]
 ```
 
-Azure Blob Storage's conventions follow from that typed model:
+That typed model is the whole point.
 
 - Block blobs cover the common case, images, documents, backups, uploaded and read as a whole or in chunks.
-- Append blobs are optimized specifically for appending, log files being written to continuously without needing to rewrite the whole object.
+- Append blobs are optimized specifically for appending, a log file being written to continuously without needing to rewrite the whole object.
 - Page blobs support random reads and writes at fixed offsets, the type Azure's own virtual machine disks are built on top of.
 
-Uploading a block blob looks like this.
+Uploading the common case, a block blob, needs only one call.
 
 ```python
 blob_client.upload_blob(image_bytes, blob_type="BlockBlob")
 ```
 
-Azure Blob Storage's typed blobs fit workloads with a clear shape, logs, disks, plain files, ahead of time, but a system already built on AWS or Google Cloud gets little benefit from switching just for that distinction.
+That typed model fits workloads with a clear shape, logs, disks, plain files, known ahead of time, but a system already built on AWS or Google Cloud gets little benefit from switching just for that distinction.
 
 # MinIO
 
@@ -91,13 +95,13 @@ flowchart LR
     M --> D[(Local or on-prem disks)]
 ```
 
-MinIO's conventions center on that self-hosted, S3-compatible design:
+That self-hosted, S3-compatible design shows up in three ways.
 
 - Speaking the S3 API means existing SDKs and tools built for S3 work against MinIO with only an endpoint URL changed.
 - Running on a team's own hardware keeps data on-premises entirely, relevant when data residency or compliance rules require it.
 - Erasure coding, rather than simple replication, protects against disk and node failure while using less raw storage overhead than storing full copies.
 
-Uploading an object looks the same as it does for S3.
+The overwrite question barely applies here the way it does for a globally distributed service. A self-hosted cluster reads its own most recent write immediately, since there is no multi-region replication lag to reconcile in the first place.
 
 ```python
 minio_client.put_object("user-uploads", "images/user42/avatar.png", image_bytes, len(image_bytes))
