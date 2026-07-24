@@ -6,6 +6,8 @@
 
 Every provider in this file rents the same underlying things, compute, storage, networking, on demand, but each has grown its own breadth of services, its own strengths, and its own gravity once a system commits to it.
 
+One ordinary task shows how differently each of them thinks about identity, letting a virtual machine read from a storage bucket without ever embedding a static credential on disk. All three solve it, none of them call it the same thing, and none of them wire it up quite the same way.
+
 # AWS
 
 AWS was the first major cloud provider at real scale, and its breadth of services remains the largest of the three, EC2 for virtual machines, S3 for object storage, Lambda for serverless functions, RDS and DynamoDB for databases, among hundreds of others.
@@ -18,16 +20,17 @@ flowchart LR
     A --> L[Lambda, serverless]
 ```
 
-AWS's conventions follow from that breadth and maturity:
+That breadth and maturity carry through in a few concrete ways.
 
 - IAM controls permissions across every service through one unified policy model, roles and policies attached to users, services, or resources.
 - Nearly every AWS service integrates natively with the others, S3 triggering Lambda, Lambda writing to DynamoDB, without needing a separate integration layer.
 - Its sheer number of services and configuration options means more flexibility, but also a steeper learning curve than a provider with a narrower catalog.
 
-Launching a virtual machine looks like this.
+The identity question is answered through an IAM role attached to the instance as an instance profile. Nothing is typed into the machine at boot, instead the EC2 metadata service on the instance itself hands out short-lived, automatically rotated credentials for whatever role is attached, sourced from AWS's STS, the Security Token Service, behind the scenes.
 
 ```python
-ec2.run_instances(ImageId="ami-12345", InstanceType="t3.micro", MinCount=1, MaxCount=1)
+s3 = boto3.client("s3")  # credentials resolved automatically via the instance's IAM role
+s3.get_object(Bucket="reports", Key="2026-q1.csv")
 ```
 
 AWS's breadth and maturity are why it remains the default choice for a system with no strong pull toward a competitor, but that same breadth means more decisions to make about which of several overlapping services to use for a given job.
@@ -43,16 +46,18 @@ flowchart LR
     A --> VA[Vertex AI, ML]
 ```
 
-GCP's conventions reflect that data and infrastructure heritage:
+That data and infrastructure heritage is what its conventions reflect.
 
 - BigQuery separates storage from compute for analytics queries, paying for the data scanned per query rather than for a database kept running around the clock.
 - Kubernetes originated at Google, and GKE, its managed Kubernetes offering, is frequently cited as one of the smoothest managed Kubernetes experiences available.
 - Its networking is built on Google's own global backbone, the same infrastructure its own products run on, rather than a network built up service by service over time.
 
-Running a BigQuery query looks like this.
+The same identity question is answered by attaching a service account to the VM instead of a role. Compute Engine's own metadata server exposes an access token scoped to whatever that service account can do, functionally similar to AWS's approach, but built around a distinct concept, a service account with its own identifier, rather than a renamed IAM role.
 
 ```python
-client.query("SELECT user_id, COUNT(*) FROM events GROUP BY user_id").result()
+client = storage.Client()  # credentials resolved automatically via the VM's service account
+bucket = client.bucket("reports")
+bucket.blob("2026-q1.csv").download_as_bytes()
 ```
 
 GCP's strength in analytics and Kubernetes make it a natural fit for a data-heavy or container-native workload, but its catalog outside of those areas is narrower than AWS's, with fewer alternatives for a given problem.
@@ -68,16 +73,18 @@ flowchart LR
     A --> SQL[Azure SQL]
 ```
 
-Azure's conventions center on that enterprise and Microsoft integration:
+That enterprise and Microsoft integration is where its conventions center.
 
 - Azure Active Directory extends the same identity system many enterprises already use on-premises, into the cloud, rather than introducing a separate identity model.
 - Hybrid cloud tooling, Azure Arc among it, is built specifically for a company running some infrastructure on-premises and some in Azure at once.
 - Enterprise agreements and licensing for existing Microsoft products often bundle favorably with Azure, a financial pull as much as a technical one.
 
-Provisioning a virtual machine looks like this.
+Here the same identity question is answered by a managed identity assigned to the VM, backed by Azure Active Directory rather than a service-specific permission object. A local metadata endpoint on the VM hands back a token AAD issued for that identity, the same underlying pattern as the other two, wired through the identity system the rest of the enterprise already runs on.
 
 ```python
-compute_client.virtual_machines.begin_create_or_update(resource_group, "vm1", vm_params)
+credential = ManagedIdentityCredential()  # token issued via Azure AD, no secret stored
+blob_client = BlobClient(account_url, container_name="reports", blob_name="2026-q1.csv", credential=credential)
+blob_client.download_blob().readall()
 ```
 
 Azure's enterprise and Microsoft-ecosystem integration make it the natural fit for an organization already built around Windows Server and Active Directory, but a team without that existing investment gets comparatively little pull toward Azure specifically.
