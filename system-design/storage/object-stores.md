@@ -44,7 +44,7 @@ GCS is Google Cloud's equivalent, distinguished by a single, uniform API across 
 ```mermaid
 flowchart LR
     A[Application] --> GCS[(GCS bucket)]
-    GCS --> T1[Standard, Nearline, Coldline, Archive]
+    GCS --> T1[Standard, Nearline,<br/>Coldline, Archive]
 ```
 
 That uniformity carries through everything else about it.
