@@ -38,48 +38,18 @@ A high TTL cuts that load dramatically, but a mistake or a needed change, failin
 
 # Authoritative Providers
 
-Route 53, Cloudflare DNS, and Google Cloud DNS are the authoritative providers that host a domain's records, the source of truth the resolution hierarchy eventually reaches. Each adds different routing logic on top of the same basic hosting job.
+Route 53, Cloudflare DNS, and Google Cloud DNS all host a domain's records, the source of truth the resolution hierarchy eventually reaches, but they differ in what routing logic they layer on top of that basic hosting job.
 
-## Route 53
-
-Route 53 leans into deep AWS integration. It offers latency-based and geolocation routing, plus health-check-based failover that can pull a record out of rotation automatically if the endpoint behind it stops responding, which matters most for a system already living inside AWS.
-
-## Cloudflare DNS
-
-Cloudflare DNS is usually the fastest to propagate changes, backed by Cloudflare's own global anycast network, and bundles DDoS protection and a free tier that has made it a common default even outside Cloudflare's other services.
-
-## Google Cloud DNS
-
-Google Cloud DNS trades some of Route 53's routing sophistication for simplicity and tight integration with GCP's own load balancers, the natural choice when the rest of the stack is already on Google Cloud rather than a reason to pick it on its own.
+| Provider | Defining trait | Fits | Trades away |
+|---|---|---|---|
+| Route 53 | Deep AWS integration, latency-based and geolocation routing, plus health-check-driven failover that pulls a record out of rotation automatically | A system already living inside AWS, where failover and routing plug directly into the rest of the stack | Platform neutrality, its most valuable features assume the rest of the system is already on AWS |
+| Cloudflare DNS | Fastest to propagate changes, backed by Cloudflare's own global anycast network, DDoS protection and a free tier bundled in | A team that wants the fastest propagation and DDoS protection, regardless of which cloud provider the servers run on | Route 53's deeper cloud-native routing logic, in exchange for speed and provider independence |
+| Google Cloud DNS | Simpler feature set with tight integration with GCP's own load balancers | A system already built on GCP, where that integration matters more than Route 53's deeper routing options | Route 53's routing sophistication, a reasonable trade only if the rest of the stack is already on Google Cloud |
 
 # How to choose
 
 The real difference between these three is rarely raw lookup speed, all three are fast enough for almost any workload. It comes down to which platform's health checks, failover, and routing rules a team is already invested in.
 
-## Route 53
-
-Route 53 fits a system already running on AWS, where health-check-driven failover and latency-based routing can plug directly into the rest of the AWS stack.
-
-## Cloudflare DNS
-
-Cloudflare DNS fits a team that wants the fastest propagation and a free tier, along with DDoS protection bundled in, regardless of which cloud provider the rest of the system runs on.
-
-## Google Cloud DNS
-
-Google Cloud DNS fits a system already built on GCP, where simplicity and tight integration with Google's own load balancers matter more than Route 53's deeper routing options.
-
 # What gets traded away
 
 Choosing an authoritative provider mostly trades routing sophistication against how tightly it needs to fit into an existing cloud stack.
-
-## Route 53
-
-Route 53 trades away platform neutrality, its most valuable features, health-check failover and latency-based routing, assume the rest of the system is already on AWS.
-
-## Cloudflare DNS
-
-Cloudflare DNS trades away Route 53's deeper cloud-native routing logic for speed and provider independence, since it works the same regardless of where the actual servers live.
-
-## Google Cloud DNS
-
-Google Cloud DNS trades away Route 53's routing sophistication for simplicity, a reasonable trade only if the rest of the stack is already on Google Cloud to begin with.
