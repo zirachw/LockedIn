@@ -49,7 +49,7 @@ LoRA, low-rank adaptation, freezes the entire pretrained model and instead train
 ```mermaid
 flowchart LR
     P[Frozen pretrained weights] --> F[Forward pass]
-    A[Small trainable LoRA matrices] --> F
+    A[Small trainable<br/>LoRA matrices] --> F
     F --> O[Output]
 ```
 
@@ -79,8 +79,8 @@ QLoRA combines LoRA with quantization. The frozen base model is loaded in 4-bit 
 
 ```mermaid
 flowchart LR
-    P[Frozen 4-bit quantized weights] --> F[Forward pass]
-    A[LoRA matrices, higher precision] --> F
+    P[Frozen 4-bit<br/>quantized weights] --> F[Forward pass]
+    A[LoRA matrices,<br/>higher precision] --> F
     F --> O[Output]
 ```
 
