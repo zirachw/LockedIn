@@ -4,6 +4,8 @@ An API that stays useful as it grows runs into two separate problems. One is ret
 
 # Pagination
 
+Pagination is the half of the problem about volume, splitting a large result set into pages small enough for a client to actually handle, rather than returning everything a query matches in one response.
+
 # Starting small
 
 Consider an endpoint listing products, returning the entire catalog in one response.
@@ -65,6 +67,8 @@ SELECT * FROM products WHERE id > 218 ORDER BY id LIMIT 20;
 Because the query anchors to a specific item rather than a row count, it stays fast regardless of how deep into the results a client is, and it stays stable even if rows are inserted or deleted elsewhere in the table. What it gives up is offset's ability to jump straight to an arbitrary page, a cursor only knows how to move forward or backward from where it already is.
 
 # Versioning
+
+Versioning is the half of the problem about change, letting a contract evolve for new clients without breaking whichever old ones haven't upgraded yet.
 
 # Starting small
 
