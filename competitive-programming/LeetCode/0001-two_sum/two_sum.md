@@ -9,44 +9,7 @@ javac two_sum.java
 java two_sum
 ```
 
-# 1. My Approach (Hash Map)
-
-Optimal solution
-
-Algorithm:
-1. Iterate each element and compute the diff of the current element, `diff = target - nums[i]`
-2. Check if the diff exists in the map
-3. If exists, return the diff index and the current index.
-4. Store the current value (as key) and its index (as value)
-5. Out of loop, then return empty array
-
-Time complexity: $O(n)$
-
-Space complexity: $O(n)$
-
-```java
-class Solution {
-    public int[] twoSum(int[] nums, int target) {
-        
-        HashMap<Integer, Integer> lookup = new HashMap<>();
-
-        for (int i = 0; i < nums.length; i++) {
-
-            int diff = target - nums[i];
-            
-            if (lookup.containsKey(diff)) {
-                return new int[]{lookup.get(diff), i};
-            }
-            
-            lookup.put(nums[i], i);
-        }
-
-        return new int[0];
-    }
-}
-```
-
-## 2. Brute Force
+## 1. Brute Force
 
 Naive, Two Loops of $i$ and $j$
 
@@ -76,7 +39,7 @@ public class Solution {
 }
 ```
 
-## 3. Sorting (Two Pointers)
+## 2. Sorting (Two Pointers)
 
 More efficient than the Brute Force
 
@@ -115,6 +78,43 @@ public class Solution {
             if (sum < target) i++; 
             else j--;
         }
+        return new int[0];
+    }
+}
+```
+
+## 3. Used Approach (Hash Map)
+
+Optimal solution
+
+Algorithm:
+1. Iterate each element and compute the diff of the current element, `diff = target - nums[i]`
+2. Check if the diff exists in the map
+3. If exists, return the diff index and the current index.
+4. Store the current value (as key) and its index (as value)
+5. Out of loop, then return empty array
+
+Time complexity: $O(n)$
+
+Space complexity: $O(n)$
+
+```java
+class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        
+        HashMap<Integer, Integer> lookup = new HashMap<>();
+
+        for (int i = 0; i < nums.length; i++) {
+
+            int diff = target - nums[i];
+            
+            if (lookup.containsKey(diff)) {
+                return new int[]{lookup.get(diff), i};
+            }
+            
+            lookup.put(nums[i], i);
+        }
+
         return new int[0];
     }
 }
