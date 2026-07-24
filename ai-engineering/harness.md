@@ -1,6 +1,38 @@
-# What are Orchestration Frameworks?
+# What are Orchestration Frameworks and Harnesses?
 
-An LLM call on its own only answers one prompt. The moment an application needs the model to call a tool, check its own work, loop until a condition is met, or hand off to another agent, something has to manage that sequence, track state between steps, and decide what happens next. Orchestration frameworks exist to be that something, so an application does not have to hand-roll its own control flow around every model call.
+An LLM call on its own only answers one prompt. Two different problems sit past that limit, coordinating several such calls into one task, and actually running the whole thing to completion once that coordination is figured out.
+
+They're related, but distinct enough that most agentic systems need to answer both. One is about the building blocks for wiring calls together, the other is about the finished, running form that decides what actually happens when the model asks for a tool.
+
+# Orchestration Frameworks
+
+Orchestration is the half of the problem about coordination, managing multiple LLM calls, tool calls, and decision points into one coherent task, and tracking what has already happened along the way.
+
+# Starting small
+
+Consider a task solved with two LLM calls in a row, summarize a document, then translate that summary, each call hardcoded to run right after the other.
+
+```mermaid
+flowchart LR
+    S[Summarize call] --> T[Translate call]
+    T --> O[Output]
+```
+
+For a fixed two-step task this is enough, there's no branching or retry to account for.
+
+# Where it breaks
+
+A real task needs to branch on what the model decides, retry a step until a check passes, or hand off to a different agent entirely, none of which a hardcoded sequence can express without its own tangle of ad hoc conditionals.
+
+```mermaid
+flowchart LR
+    S[Step] --> D{Check passes?}
+    D -- retry --> S
+    D -- escalate --> H[Different agent]
+    D -- done --> O[Output]
+```
+
+Coordinating that branching, retrying, and handoff without hand-rolling it from scratch each time is what the frameworks below solve differently.
 
 # The shared problem
 
@@ -250,6 +282,67 @@ The canvas above compiles down to plain JSON underneath.
 
 That visual, node-based model is what makes n8n approachable for a team without dedicated engineers building the workflow, but it trades away the flexibility and testability of an actual codebase once the logic gets complicated enough to need real control flow.
 
+# Harness
+
+A framework hands over the primitives for that coordination, chains or graphs, tool calling, persisted state, but still leaves open what tools actually exist, what the system prompt says, and whether the whole thing keeps running until the task is actually done. A harness is that decided, already-running form, whether it's built on top of one of the frameworks above or hand-rolled without one at all.
+
+# Starting small
+
+Consider a single tool call handled inline, right after the model's response, one `if` branch deciding whether to execute it.
+
+```mermaid
+flowchart LR
+    P[Prompt] --> M[LLM call]
+    M --> D{Tool requested?}
+    D -- yes --> Ex[Execute tool]
+    D -- no --> Out[Final answer]
+```
+
+For a task needing exactly one possible tool call, this inline branch is enough on its own.
+
+# Where it breaks
+
+A real task needs a second tool call depending on the first one's result, then a third, and something has to decide when the loop is actually done rather than running forever.
+
+```mermaid
+flowchart LR
+    M[LLM call] --> D{Tool requested?}
+    D -- yes --> Ex[Execute tool]
+    Ex --> M
+    D -- no --> Out[Final answer]
+```
+
+# The Loop
+
+Each iteration appends to the same running conversation, the model's own message, the tool call it requested, and the tool's result, so the next call in the loop sees everything that already happened rather than starting from a blank slate.
+
+```
+messages = [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "tool_call": "search(query=...)"},
+    {"role": "tool", "content": "<search results>"},
+]
+```
+
+That growing list is what gets sent back to the model on every single call, which is also why a long-running loop eventually has to worry about the conversation outgrowing the model's own context window.
+
+# Knowing When to Stop
+
+A loop needs an explicit reason to end, not just an absence of further instructions, otherwise a model that keeps finding one more thing to check never hands control back at all.
+
+```mermaid
+flowchart LR
+    M[LLM call] --> D{Tool requested?}
+    D -- no --> Out[Final answer,<br/>loop ends]
+    D -- yes --> Cap{Under call limit?}
+    Cap -- yes --> Ex[Execute tool] --> M
+    Cap -- no --> Stop[Forced stop]
+```
+
+The natural stop is the model simply not asking for a tool anymore. The forced stop is a hard cap on how many iterations the loop is allowed to take, a safety net for the case where the model never reaches the natural one on its own.
+
+That is exactly the point where hand-rolling the loop directly starts to strain, and reaching for one of the frameworks above to supply the state and control flow starts to pay off.
+
 # How to choose
 
 LangChain fits a straightforward pipeline, retrieval plus a single LLM call plus formatting, without complex looping or multi-agent coordination.
@@ -266,6 +359,8 @@ Semantic Kernel fits an existing enterprise codebase in .NET or a multi-language
 
 n8n fits a team without dedicated engineering resources that still needs to wire an LLM call into a broader automation, triggered by a webhook, a form submission, or a schedule, alongside non-AI integrations.
 
+A harness built directly, without a framework underneath, fits a loop simple enough that a framework's state and control-flow machinery would be pure overhead.
+
 # What gets traded away
 
 LangChain trades away built-in support for cyclic, stateful agent loops, which is exactly the gap LangGraph exists to fill.
@@ -281,3 +376,5 @@ LlamaIndex trades away general-purpose orchestration, it is not really built to 
 Semantic Kernel trades away the size of its community and plugin ecosystem compared to LangChain, since it is a smaller, more enterprise-focused project.
 
 n8n trades away code-level flexibility and testability, complex conditional logic that a few lines of Python handle easily can turn into an unwieldy tangle of nodes on a visual canvas.
+
+A hand-rolled harness trades away a framework's ready-made state handling and control flow, staying free of a dependency the loop never actually needed.
