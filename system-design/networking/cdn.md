@@ -59,48 +59,18 @@ Cache invalidation, purging a specific asset from every edge node before its TTL
 
 # Providers
 
-Cloudflare, Amazon CloudFront, and Fastly are the major CDN providers. Each also offers DDoS protection and edge compute as an extension of the same distributed network.
+Cloudflare, Amazon CloudFront, and Fastly are the major CDN providers, and each also offers DDoS protection and edge compute as an extension of the same distributed network.
 
-## Cloudflare
-
-Cloudflare pairs its CDN with the rest of its security and DNS product line, DDoS protection, a WAF, and Workers for running code at the edge, in one account, which is why it is often the default even for a team not otherwise deep in one cloud provider.
-
-## Amazon CloudFront
-
-Amazon CloudFront leans into AWS integration, pulling directly from an S3 bucket as an origin and running Lambda@Edge for per-request logic, the natural choice for a system already built on AWS.
-
-## Fastly
-
-Fastly is known for near-instant cache purges, invalidating an asset across its network in seconds rather than minutes, which matters most for news or media sites that need a change to go live immediately rather than waiting on a TTL to expire.
+| Provider | Defining trait | Fits | Trades away |
+|---|---|---|---|
+| Cloudflare | Pairs its CDN with the rest of its security and DNS product line, DDoS protection, a WAF, and Workers for running code at the edge, all in one account | A team that wants CDN, DNS, and security bundled together, without needing to already be on a specific cloud provider | Some of CloudFront's depth of native AWS integration, for being a more provider-neutral default |
+| Amazon CloudFront | Leans into AWS integration, pulling directly from an S3 bucket as an origin and running Lambda@Edge for per-request logic | A system already built on AWS, where pulling from S3 and running Lambda@Edge fit naturally into the existing stack | That same neutrality, its tightest integrations only pay off when the origin is already S3 or another AWS service |
+| Fastly | Known for near-instant cache purges, invalidating an asset across its network in seconds rather than minutes | Content that changes often enough that purge speed genuinely matters, a news site or anything publishing frequent updates | Cloudflare's broader bundled product line and CloudFront's AWS integration, for being narrowly focused on CDN performance and fast purges specifically |
 
 # How to choose
 
 The general fit is the same across all three, cacheable, mostly-static content benefits, content that must always be fresh does not. Within that, the choice comes down to what else the system already depends on.
 
-## Cloudflare
-
-Cloudflare fits a team that wants CDN, DNS, and security bundled into one account, without needing to already be on a specific cloud provider.
-
-## Amazon CloudFront
-
-Amazon CloudFront fits a system already built on AWS, where pulling from S3 and running Lambda@Edge fit naturally into the existing stack.
-
-## Fastly
-
-Fastly fits content that changes often enough that purge speed genuinely matters, a news site or anything publishing frequent updates that cannot wait on a TTL to expire naturally.
-
 # What gets traded away
 
 A CDN meaningfully cuts latency and origin load for cacheable content, but it adds a layer of caching that can serve stale content if invalidation is not handled correctly when the origin changes. Content that must always be fresh, real-time pricing, live inventory counts, gets little benefit from it and needs to bypass the cache entirely, which reintroduces the exact latency the CDN exists to remove.
-
-## Cloudflare
-
-Cloudflare trades away some of CloudFront's depth of native AWS integration for being a more provider-neutral default.
-
-## Amazon CloudFront
-
-Amazon CloudFront trades away that neutrality, its tightest integrations only pay off when the origin is already S3 or another AWS service.
-
-## Fastly
-
-Fastly trades away Cloudflare's broader bundled product line and CloudFront's AWS integration for being narrowly focused on CDN performance and fast purges specifically.
