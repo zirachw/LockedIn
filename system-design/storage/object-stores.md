@@ -53,6 +53,8 @@ That uniformity carries through everything else about it.
 - Object lifecycle rules automatically transition or delete objects based on age or access pattern, configured once at the bucket level.
 - Strong consistency covers every operation uniformly, rather than reads and overwrites following different rules.
 
+Uploading an object is a single call either way.
+
 ```python
 bucket.blob("images/user42/avatar.png").upload_from_string(image_bytes)
 ```
