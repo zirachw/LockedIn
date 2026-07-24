@@ -53,7 +53,7 @@ Because retries mean the same event can arrive more than once, an idempotency ke
 
 A webhook endpoint is a public URL, and anything reachable at a public URL can be called by anyone, not just the expected sender. A signature, computed by the sender over the payload using a shared secret and sent as a header, lets the receiver verify a request actually came from the expected source before acting on it.
 
-Verifying that signature looks like this.
+Verifying that signature is a direct HMAC comparison against the header.
 
 ```python
 expected = hmac.new(webhook_secret, request.body, hashlib.sha256).hexdigest()
