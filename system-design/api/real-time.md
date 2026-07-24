@@ -55,7 +55,7 @@ A WebSocket's conventions follow from that bidirectionality:
 - The connection carries arbitrary framed messages, not necessarily HTTP requests anymore, so the application defines its own message format on top.
 - A dropped connection has to be detected and reconnected explicitly, there is no automatic retry built into the protocol the way a browser's EventSource has for SSE.
 
-Opening a WebSocket from the browser looks like this.
+Opening one from the browser and sending a message needs only a few lines.
 
 ```javascript
 const socket = new WebSocket("wss://chat.example.com/socket");
@@ -84,7 +84,7 @@ SSE's conventions reflect that one-directional design:
 - The browser's EventSource API reconnects automatically if the connection drops, without the application needing to implement that logic itself.
 - Because it is plain HTTP, SSE passes through existing infrastructure, proxies, load balancers, that already understands HTTP, without needing the protocol upgrade a WebSocket requires.
 
-Consuming an SSE stream from the browser looks like this.
+Consuming a stream from the browser is just as short.
 
 ```javascript
 const events = new EventSource("/events");
