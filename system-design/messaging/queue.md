@@ -19,7 +19,7 @@ Task volume grows past what one consumer can keep up with, and the queue starts 
 ```mermaid
 flowchart LR
     P[Producer] --> Q[[Queue, backlog growing]]
-    Q --> C[Single consumer, falling behind]
+    Q --> C[Single consumer,<br/>falling behind]
 ```
 
 Adding more consumers reading from the same queue fixes the throughput problem, but it introduces new questions a single consumer never had to answer, what happens if a consumer crashes mid-task, what happens if the same message gets processed twice, and whether processing order matters at all once multiple consumers are involved.
