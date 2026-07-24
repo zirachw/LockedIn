@@ -76,7 +76,7 @@ class Solution
 }
 ```
 
-## 3. Hash set
+## 3. Used Solution (Hash set)
 
 Optimal solution
 
