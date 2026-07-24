@@ -17,7 +17,7 @@ GPTQ quantizes a model layer by layer after training is done, using a calibratio
 ```mermaid
 flowchart LR
     W[Full-precision weights] --> C[Calibration data pass]
-    C --> L[Layer-by-layer reconstruction]
+    C --> L[Layer-by-layer<br/>reconstruction]
     L --> Q[Quantized weights]
 ```
 
@@ -46,9 +46,9 @@ AWQ, activation-aware weight quantization, observes that a small fraction of wei
 
 ```mermaid
 flowchart LR
-    W[Full-precision weights] --> A[Observe activation magnitudes]
+    W[Full-precision weights] --> A[Observe activation<br/>magnitudes]
     A --> S[Identify salient channels]
-    S --> Q[Quantize non-salient channels harder]
+    S --> Q[Quantize non-salient<br/>channels harder]
 ```
 
 Protecting salient channels, rather than reconstructing layer by layer, is what its conventions revolve around.
@@ -101,7 +101,7 @@ bitsandbytes is the quantization library behind QLoRA, providing on-the-fly quan
 ```mermaid
 flowchart LR
     W[Full-precision checkpoint] --> L[Load with BitsAndBytesConfig]
-    L --> Q[Quantized in memory, 4-bit or 8-bit]
+    L --> Q[Quantized in memory,<br/>4-bit or 8-bit]
 ```
 
 Dynamic, load-time quantization is what its conventions are built around.
