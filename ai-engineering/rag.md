@@ -8,6 +8,10 @@ Every RAG approach exists to answer the same underlying need, finding the right 
 
 Many approaches have been built to answer that problem, but four are worth knowing well, naive RAG, hybrid search RAG, reranked RAG, and agentic RAG, each trading simplicity against retrieval quality in a different way.
 
+One question exposes the real gap between them better than a simple lookup does, a multi-hop question, one whose answer requires connecting two separate facts that live in two different documents. Something like, which of the two most recent product releases had a security vulnerability reported after launch. Answering it means first finding which releases are the two most recent, then checking a completely separate advisories document for either of them.
+
+That question runs through every section below.
+
 # Naive RAG
 
 Naive RAG embeds a query, searches a vector index for the most similar chunks, and stuffs those chunks directly into the prompt alongside the question. It is the simplest version of the pattern and the one most tutorials teach first.
@@ -20,23 +24,25 @@ flowchart LR
     C --> L[LLM]
 ```
 
-Naive RAG's conventions are built around a single retrieval pass:
+A single retrieval pass shapes everything about it.
 
 - Documents are chunked once, usually by a fixed token or character count with some overlap, and embedded ahead of time into a vector index.
 - A query is embedded with the same model used for the documents, since comparing embeddings from different models produces meaningless similarity scores.
 - The top-k most similar chunks are retrieved and concatenated into the prompt, with k usually fixed at a small number like three to five.
 
-A minimal naive RAG query looks like this.
+The multi-hop question is where that single pass runs out of road.
 
 ```python
-query_embedding = embed(query)
+query_embedding = embed("Which of the two most recent releases had a security vulnerability?")
 chunks = vector_index.search(query_embedding, top_k=5)
 context = "\n\n".join(chunk.text for chunk in chunks)
 prompt = f"Answer using only this context:\n{context}\n\nQuestion: {query}"
 answer = llm.generate(prompt)
 ```
 
-Pure similarity search retrieves whatever is closest in embedding space, which is not always what is actually relevant. A query using different wording than the source document can miss a chunk that a keyword search would have caught immediately.
+The embedding of that question lands near chunks that mention both release notes and vulnerabilities in passing, but there is no guarantee the actual release-notes chunk and the actual advisory chunk both make it into the same top five. The model ends up answering from whichever half of the picture happened to score higher, often confidently wrong.
+
+Pure similarity search also misses exact wording a keyword search would catch immediately, a query phrased differently than the source document can skip right past a chunk that answers it directly.
 
 # Hybrid Search RAG
 
@@ -53,13 +59,13 @@ flowchart LR
     C --> L[LLM]
 ```
 
-Hybrid search's conventions revolve around combining two different ranking signals:
+Combining two different ranking signals is the whole idea.
 
 - Vector search and BM25 run independently against the same chunk store, then their scores are merged with a weighting scheme, often reciprocal rank fusion.
 - Reciprocal rank fusion combines two ranked lists using each chunk's rank position rather than its raw score, which avoids needing to normalize two differently-scaled scoring systems.
 - Most managed vector databases, Weaviate, Elasticsearch, now support hybrid search natively, rather than requiring two separate systems wired together manually.
 
-Combining two ranked lists with reciprocal rank fusion looks like this.
+Merging the two ranked lists is a small function on its own.
 
 ```python
 def reciprocal_rank_fusion(vector_results, keyword_results, k=60):
@@ -71,7 +77,7 @@ def reciprocal_rank_fusion(vector_results, keyword_results, k=60):
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 ```
 
-Hybrid search catches exact-term matches that pure vector search can miss, but it still retrieves a fixed top-k in one pass, which is not enough when the answer actually requires connecting facts spread across several chunks.
+The multi-hop question fares no better here. Merging BM25's exact-term matching with vector search finds the right chunks more reliably for either half of the question on its own, release names or vulnerability reports, but it still hands the model one top-k list from one retrieval pass. If both halves do not happen to rank inside that single list together, the model still cannot connect them.
 
 # Reranked RAG
 
@@ -85,13 +91,13 @@ flowchart LR
     C --> L[LLM]
 ```
 
-Reranking's conventions center on a two-stage retrieval pipeline:
+A two-stage retrieval pipeline is the mechanism here.
 
 - The first stage retrieves a wide net, often the top 50 to 100 candidates, prioritizing recall over precision since a cross-encoder narrows it down next.
 - A cross-encoder scores the query and each candidate chunk together in one forward pass, rather than comparing precomputed embeddings, which is far more accurate but too slow to run over an entire index.
 - Only the reranked top-k, usually three to five, actually reaches the LLM, keeping the final prompt small even though the initial candidate pool was large.
 
-Reranking a candidate pool looks like this.
+Widening the pool then narrowing it back down is two calls, not one.
 
 ```python
 candidates = vector_index.search(query_embedding, top_k=50)
@@ -99,7 +105,7 @@ scored = reranker.predict([(query, c.text) for c in candidates])
 top_chunks = [c for c, _ in sorted(zip(candidates, scored), key=lambda x: x[1], reverse=True)[:5]]
 ```
 
-Reranking meaningfully improves precision over a single-pass retrieval, but it adds real latency. A cross-encoder pass over fifty candidates is far slower than a vector search, and it still only ever does one retrieval round, which is not enough for questions that need multiple hops of reasoning.
+Widening the candidate pool to 50 improves the odds that both the release-notes chunk and the advisory chunk are somewhere in there, and the cross-encoder does a genuinely better job picking the most relevant ones out of that pool. But it is still one retrieval round against one static pool. If the true answer needs a chunk that a plain similarity search never surfaced into that initial 50 at all, no amount of reranking recovers it.
 
 # Agentic RAG
 
@@ -114,13 +120,13 @@ flowchart LR
     LLM2 -- yes --> A[Generate answer]
 ```
 
-Agentic RAG's conventions borrow directly from the orchestration frameworks that implement it:
+The multi-hop question is exactly what this loop was built to answer.
 
 - A retrieval step is exposed to the model as a tool call, the same way any other tool would be, rather than being a fixed step that always runs once before generation.
 - The model itself decides whether to decompose a complex question into several simpler retrieval queries, run one after another.
 - This pattern is usually built on top of an orchestration framework with cycle support, LangGraph, for instance, rather than a single linear RAG pipeline.
 
-A minimal agentic retrieval loop looks like this.
+A minimal version of that loop fits in a handful of lines.
 
 ```python
 def agentic_rag(query, max_hops=3):
@@ -133,7 +139,9 @@ def agentic_rag(query, max_hops=3):
     return llm.generate(f"Context:\n{context}\n\nAnswer as best you can: {query}")
 ```
 
-Letting the model control retrieval handles multi-hop questions a single-pass pipeline cannot, but every additional hop costs another round trip to the model, and a model that decides to keep searching indefinitely needs a hard cap to avoid runaway latency and cost.
+Run against the release question, the first hop retrieves the two most recent release names. The model reads that, recognizes it still does not have vulnerability information, and issues a second retrieval for advisories naming either release. Only then does it answer, having connected a fact no single pass, however wide or well-reranked, could reach in one shot.
+
+That capability is not free. Every additional hop costs another round trip to the model, and a model that decides to keep searching indefinitely needs a hard cap to avoid runaway latency and cost.
 
 # How to choose
 
@@ -147,10 +155,10 @@ Agentic RAG fits genuinely multi-hop questions, ones that need facts pulled from
 
 # What gets traded away
 
-Naive RAG trades away precision for simplicity, a single retrieval pass will occasionally miss the right chunk or include an irrelevant one with no way to correct course.
+Naive RAG trades away precision for simplicity. A single retrieval pass will occasionally miss the right chunk or include an irrelevant one with no way to correct course, and it has no way to answer a genuinely multi-hop question at all.
 
-Hybrid search trades away some of that simplicity for better recall on exact terms, needing two retrieval systems, or one that supports both, kept in sync with the same underlying chunk store.
+Hybrid search trades away some of that simplicity for better recall on exact terms, needing two retrieval systems, or one that supports both, kept in sync with the same underlying chunk store, without solving the multi-hop gap either.
 
-Reranked RAG trades away latency and infrastructure, a cross-encoder is an extra model to host and run on every query, and it adds a real, noticeable delay compared to vector search alone.
+Reranked RAG trades away latency and infrastructure. A cross-encoder is an extra model to host and run on every query, and it adds a real, noticeable delay compared to vector search alone, for a precision gain that still tops out at one retrieval round.
 
 Agentic RAG trades away predictable cost and latency, a question might resolve in one hop or spiral into several, which makes both response time and API cost harder to bound in advance.
