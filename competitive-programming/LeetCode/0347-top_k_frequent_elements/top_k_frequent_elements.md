@@ -44,7 +44,7 @@ class Solution
 };
 ```
 
-## 3. Min-Heap
+## 2. Min-Heap
 
 More efficient than sorting
 
@@ -85,7 +85,7 @@ class Solution
 };
 ```
 
-## 2. Used Approach (Freq & Group)
+## 3. Used Approach (Freq & Group)
 
 Optimal solution
 
