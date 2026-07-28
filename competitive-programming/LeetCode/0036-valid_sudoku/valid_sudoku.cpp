@@ -26,10 +26,10 @@ class Solution
                         if (cols[j][v]) return false;
                         else cols[j][v] = true;
 
-                        int idx = i / 3 * 3 + j / 3;
+                        int k = i / 3 * 3 + j / 3;
                         
-                        if (square[idx][v]) return false;
-                        else square[idx][v] = true;
+                        if (square[k][v]) return false;
+                        else square[k][v] = true;
                     }
                 }
             }
@@ -37,3 +37,4 @@ class Solution
             return true;
         }
 };
+    
