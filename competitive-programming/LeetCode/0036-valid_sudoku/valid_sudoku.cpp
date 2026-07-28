@@ -23,8 +23,8 @@ class Solution
                         if (rows[i][v]) return false;
                         else rows[i][v] = true;
 
-                        if (cols[i][v]) return false;
-                        else cols[i][v] = true;
+                        if (cols[j][v]) return false;
+                        else cols[j][v] = true;
 
                         int idx = i / 3 * 3 + j / 3;
                         
